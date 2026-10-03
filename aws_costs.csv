@@ -1,0 +1,43 @@
+Service,Amount,Unit
+AWS Glue,0,USD
+AWS Secrets Manager,0,USD
+Amazon Simple Notification Service,0,USD
+Amazon Simple Queue Service,0,USD
+Amazon Simple Storage Service,0,USD
+AWS Glue,0,USD
+AWS Key Management Service,0,USD
+Amazon Simple Storage Service,0,USD
+AWS Glue,0,USD
+Amazon Simple Storage Service,0,USD
+AWS Data Transfer,-0.0000000718,USD
+AWS Glue,0,USD
+AWS Key Management Service,0,USD
+EC2 - Other,0.0000000733,USD
+Amazon Elastic Compute Cloud - Compute,0,USD
+Amazon Simple Storage Service,0,USD
+Amazon Virtual Private Cloud,0,USD
+AWS Glue,0,USD
+EC2 - Other,0.0000000024,USD
+Amazon Simple Queue Service,0,USD
+Amazon Simple Storage Service,0,USD
+AWS Glue,0,USD
+AWS Secrets Manager,0,USD
+EC2 - Other,0.0000000024,USD
+Amazon Elastic Compute Cloud - Compute,0,USD
+Amazon Simple Notification Service,0,USD
+Amazon Simple Storage Service,0,USD
+Amazon Virtual Private Cloud,0,USD
+AWS Data Transfer,-0.0008195109,USD
+AWS Glue,0,USD
+AWS Key Management Service,0,USD
+EC2 - Other,0.00081951,USD
+Amazon Elastic Compute Cloud - Compute,0,USD
+Amazon Simple Storage Service,0,USD
+Amazon Virtual Private Cloud,0,USD
+AWS Cost Explorer,0,USD
+AWS Data Transfer,-0.0061990122,USD
+AWS Glue,0,USD
+EC2 - Other,0.0061990068,USD
+Amazon Elastic Compute Cloud - Compute,0,USD
+Amazon Simple Storage Service,0,USD
+Amazon Virtual Private Cloud,0,USD

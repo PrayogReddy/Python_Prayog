@@ -1,0 +1,41 @@
+pipeline{
+    agent{label 'dev'}
+        environment {
+            Deploy_Environment = "dev"
+    }
+    stages{
+        stage('Checkout') {
+            steps {
+                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'github_creds', url: 'https://github.com/PrayogReddy/java-onlinebookstore.git']])
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'mvn clean test'
+            }
+        }
+        stage('Sonar Scan') {
+            steps {
+                echo "This is a Sonar Scan stage"
+                echo "Sonar URL: ${SonarURL}"
+            }
+        }
+        stage('Push') {
+            steps {
+                echo "This is a Push stage"
+                echo "Jfrog URL: ${JfrogURL}"
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo "This is a Deploy stage"
+                echo "Deploy Environment: ${Deploy_Environment}"
+            }
+        }
+    }
+}
