@@ -1,0 +1,126 @@
+pipeline {
+    agent { label 'uat' }
+    environment {
+        SonarUrl = "https://sonar.opqtech.com"
+        JfrogUrl = "https://jfrog.opqtech.com"
+    }
+    parameters {
+        booleanParam 'RUN_SONAR'
+        string defaultValue: '1.0.0', name: 'APP_VERSION', trim: true
+    }
+    options {
+        buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '10')
+        disableConcurrentBuilds abortPrevious: true
+        //retry(2)
+        timeout(time: 120, unit: 'SECONDS')
+        disableRestartFromStage()
+    }
+    stages{
+        stage('Checkout') {
+            steps {
+                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-creds', url: 'https://github.com/OpqTech/java-onlinebookstore.git']])
+            }
+        }
+        stage('Build') {
+            steps {
+                echo "Build-Number: ${BUILD_NUMBER}"
+                //sh 'sleep 45'
+                sh 'mvn clean package -DskipTests'
+                sh "mv target/*war target/onlinebookstore-${params.APP_VERSION}.war"
+                archiveArtifacts artifacts: 'target/*war', followSymlinks: false
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'mvn clean test'
+            }
+        }
+        stage('Sonar-Scan') {
+            when {
+                expression {params.RUN_SONAR == true}
+            }
+            steps {
+                echo "This is a Scan Stage"
+                echo "SonarURL : ${SonarUrl}"
+            }
+        }
+        stage('Push') {
+            steps {
+                //withCredentials([usernamePassword(credentialsId: 'github-creds', passwordVariable: 'gitpassword', usernameVariable: 'gituser')]) {
+                    echo "This is a Push Stage"
+                    echo "JfrogURL : ${JfrogUrl}"
+                    //echo "Username : ${gituser}" //username:password 
+                    //echo "Password : ${gitpassword}"
+                    //sh 'curl -X PUT -u ${gitcreds} -T target/*war https://jfrog/opqtech.com/repo/app.war'
+                //}
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo "This is a Deploy Stage"
+                echo "Environment : ${params.environment}"
+                echo "Build-URL: ${BUILD_URL}"
+            }
+        }
+        # stage('Automation Testing Suite') {
+        #     parallel {
+        #         stage('suite1') {
+        #             steps {
+        #                 sh 'sleep 15s'
+        #                 sh 'echo suite1 is success'
+        #             }
+        #         }
+        #         stage('suite2') {
+        #             steps {
+        #                 sh 'sleep 30s'
+        #                 sh 'echo suite2 is success'
+        #             }
+        #         }
+        #         stage('suite3') {
+        #             steps {
+        #                 sh 'sleep 25s'
+        #                 sh 'echo suite3 is success'
+        #             }
+        #         }
+        #     }
+        # }
+        stage('Automation Testing Suite') {
+            steps {
+                parallel (
+                    suite1: {                        
+                        sh 'sleep 15s'
+                        sh 'echo suite1 is success'
+                    },
+                    suite2: {
+                        sh 'sleep 30s'
+                        sh 'echo suite2 is success'
+                    },
+                    suite3: {
+                        sh 'sleep 25s'
+                        sh 'echo suite3 is success'
+                    }
+                )
+            }
+        }
+    }
+    post {
+        success {
+            slackSend(
+                message: "BUILD SUCCESS: Job '${env.JOB_NAME}' [Build #${env.BUILD_NUMBER}] completed successfully! (Version: ${params.APP_VERSION}) \n Console Logs: ${env.BUILD_URL}"
+            )
+        }
+        failure {
+            slackSend(
+                message: "BUILD FAILED: Job '${env.JOB_NAME}' [Build #${env.BUILD_NUMBER}] failed during execution. \n Review Failures: ${env.BUILD_URL}"
+            )
+        }
+        aborted {
+            slackSend(
+                message: "BUILD ABORTED: Job '${env.JOB_NAME}' [Build #${env.BUILD_NUMBER}] was stopped manually. (${env.BUILD_URL})"
+            )
+        }
+        always {
+            cleanWs()
+        }
+    }
+}

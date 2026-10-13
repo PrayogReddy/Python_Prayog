@@ -1,40 +1,63 @@
-pipeline{
-    agent{label 'dev'}
-        environment {
-            Deploy_Environment = "dev"
+pipeline {
+    agent { label "${environment}" }
+    parameters {
+        choice choices: ['dev', 'qa', 'uat', 'prod'], description: 'Choose the env', name: 'environment'
+        booleanParam defaultValue: true, description: 'Enable to run sonar scan', name: 'sonar'
     }
-    stages{
-        stage('Checkout') {
+    environment {
+        SONARQUBE_ENV = 'sonarscanner' 
+        PROJECT_KEY = 'onlinebookstore'
+        JFROG_URL = 'http://54.175.207.128:8081/artifactory/onlinebookstore_release/'
+    }
+    stages {
+        stage('checkout') {
             steps {
-                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'github_creds', url: 'https://github.com/PrayogReddy/java-onlinebookstore.git']])
+                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: '', url: 'https://github.com/OpqTech/java-onlinebookstore.git']])
             }
         }
-        stage('Build') {
+        stage('sonarscan') {
+            when {
+                expression { params.sonar }
+            }
             steps {
-                sh 'mvn clean package -DskipTests'
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                    sh "mvn clean verify sonar:sonar -Dsonar.projectKey=${PROJECT_KEY}"
+                    sh "sleep 10s"
+                }
             }
         }
-        stage('Test') {
+        stage('quality gate') {
+            when {
+                expression { params.sonar }
+            }
             steps {
-                sh 'mvn clean test'
+                timeout(time: 2, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: false
+                }
             }
         }
-        stage('Sonar Scan') {
+        stage('build') {
             steps {
-                echo "This is a Sonar Scan stage"
-                echo "Sonar URL: ${SonarURL}"
+                sh 'mvn clean package'
+                archiveArtifacts artifacts: 'target/*.war', fingerprint: true
+            }
+            post {
+                always {
+                    jacoco execPattern: 'target/*.exec'
+                    junit 'target/surefire-reports/*.xml'
+                }
             }
         }
-        stage('Push') {
+        stage('push') {
             steps {
-                echo "This is a Push stage"
-                echo "Jfrog URL: ${JfrogURL}"
+                configFileProvider([configFile(fileId: 'maven_settings', variable: 'settings')]) {
+                    sh "mvn -s ${settings} deploy -DskipTests -DaltDeploymentRepository=release-repo::default::${JFROG_URL}"
+                }
             }
         }
-        stage('Deploy') {
+        stage('deploy') {
             steps {
-                echo "This is a Deploy stage"
-                echo "Deploy Environment: ${Deploy_Environment}"
+                sh 'cp -r /home/ubuntu/jenkins/workspace/sonar_jfrog_pipeline/target/*.war /opt/tomcat/apache-tomcat-9.0.68/webapps/'
             }
         }
     }
