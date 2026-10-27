@@ -1,0 +1,73 @@
+pipeline {
+    agent { label 'dev' }
+    environment {
+        SonarUrl = "https://sonar.opqtech.com"
+        JfrogUrl = "https://jfrog.opqtech.com"
+    }
+    parameters {
+        booleanParam 'RUN_SONAR'
+        string defaultValue: '1.0.0', name: 'APP_VERSION', trim: true
+    }
+    stages{
+        stage('Checkout') {
+            steps {
+                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-creds', url: 'https://github.com/OpqTech/java-onlinebookstore.git']])
+            }
+        }
+        stage('Build') {
+            steps {
+                echo "Build-Number: ${BUILD_NUMBER}"
+                sh 'mvn clean package -DskipTests'
+                sh "mv target/*war target/onlinebookstore-${params.APP_VERSION}.war"
+                archiveArtifacts artifacts: 'target/*war', followSymlinks: false
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'mvn clean test'
+            }
+        }
+        stage('Sonar-Scan') {
+            when {
+                expression {params.RUN_SONAR == true}
+            }
+            steps {
+                echo "This is a Scan Stage"
+                echo "SonarURL : ${SonarUrl}"
+            }
+        }
+        stage('Push') {
+            steps {
+                    echo "This is a Push Stage"
+                    echo "JfrogURL : ${JfrogUrl}"
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo "This is a Deploy Stage"
+                echo "Environment : ${params.environment}"
+                echo "Build-URL: ${BUILD_URL}"
+            }
+        }
+    }
+    post {
+        success {
+            slackSend(
+                message: "BUILD SUCCESS: Job '${env.JOB_NAME}' [Build #${env.BUILD_NUMBER}] completed successfully! (Version: ${params.APP_VERSION}) \n Console Logs: ${env.BUILD_URL}"
+            )
+        }
+        failure {
+            slackSend(
+                message: "BUILD FAILED: Job '${env.JOB_NAME}' [Build #${env.BUILD_NUMBER}] failed during execution. \n Review Failures: ${env.BUILD_URL}"
+            )
+        }
+        aborted {
+            slackSend(
+                message: "BUILD ABORTED: Job '${env.JOB_NAME}' [Build #${env.BUILD_NUMBER}] was stopped manually. (${env.BUILD_URL})"
+            )
+        }
+        always {
+            cleanWs()
+        }
+    }
+}

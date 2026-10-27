@@ -1,0 +1,35 @@
+pipeline{
+    agent {label 'dev'}
+    stages{
+        stage('Checkout'){
+            steps{
+                echo "This is Checkout stage"
+            }
+        }
+        stage('Build'){
+            steps{
+                echo "This is Build stage"
+            }
+        }
+        stage('Test'){
+            steps{
+                echo "This is Test stage"
+            }
+        }
+        stage('SonarQube'){
+            steps{
+                echo "This is Sonar Code Scan stage"
+            }
+        }
+        stage('Push'){
+            steps{
+                echo "This is Push stage"
+            }
+        }
+        stage('Deploy'){
+            steps{
+                echo "This is Deploy stage"
+            }
+        }
+    }
+}

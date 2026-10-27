@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'uat' }
+    agent { label 'dev' }
     environment {
         SonarUrl = "https://sonar.opqtech.com"
         JfrogUrl = "https://jfrog.opqtech.com"
@@ -46,13 +46,8 @@ pipeline {
         }
         stage('Push') {
             steps {
-                //withCredentials([usernamePassword(credentialsId: 'github-creds', passwordVariable: 'gitpassword', usernameVariable: 'gituser')]) {
                     echo "This is a Push Stage"
                     echo "JfrogURL : ${JfrogUrl}"
-                    //echo "Username : ${gituser}" //username:password 
-                    //echo "Password : ${gitpassword}"
-                    //sh 'curl -X PUT -u ${gitcreds} -T target/*war https://jfrog/opqtech.com/repo/app.war'
-                //}
             }
         }
         stage('Deploy') {
@@ -62,28 +57,6 @@ pipeline {
                 echo "Build-URL: ${BUILD_URL}"
             }
         }
-        # stage('Automation Testing Suite') {
-        #     parallel {
-        #         stage('suite1') {
-        #             steps {
-        #                 sh 'sleep 15s'
-        #                 sh 'echo suite1 is success'
-        #             }
-        #         }
-        #         stage('suite2') {
-        #             steps {
-        #                 sh 'sleep 30s'
-        #                 sh 'echo suite2 is success'
-        #             }
-        #         }
-        #         stage('suite3') {
-        #             steps {
-        #                 sh 'sleep 25s'
-        #                 sh 'echo suite3 is success'
-        #             }
-        #         }
-        #     }
-        # }
         stage('Automation Testing Suite') {
             steps {
                 parallel (
